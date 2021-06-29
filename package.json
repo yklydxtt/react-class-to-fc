@@ -1,0 +1,31 @@
+{
+  "name": "react-class-to-fc",
+  "version": "1.0.0",
+  "description": "transform class component to function component",
+  "main": "index.js",
+  "bin": {
+    "ctfc": "bin/ctfc"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublish": "babel src -d lib"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yklydxtt/react-fc-to-class.git"
+  },
+  "author": "guoyuwei",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yklydxtt/react-fc-to-class/issues"
+  },
+  "homepage": "https://github.com/yklydxtt/react-fc-to-class#readme",
+  "dependencies": {
+    "chalk": "^4.1.1",
+    "commander": "^8.0.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.14.5",
+    "@babel/core": "^7.14.6"
+  }
+}
