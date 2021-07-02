@@ -26,21 +26,31 @@ class Transformer {
     }
 
     walkAst = () => {
-        const self = this;
         const content = fs.readFileSync(this.mainFile, 'utf-8');
         const ast = parse(content, { sourceType: "module", plugins: ["jsx"] });
         traverse(ast, {
             ClassDeclaration(path) {
-                const functions=[]
+                const functions=[];
                 path.node.body.body.forEach(item => {
                     const methodName=item.key.name;
                     if(cycle.indexOf(methodName)===-1){
                         functions.push(t.functionDeclaration(item.key,item.params,item.body));
+                    }else if(methodName==='render'){
+                        functions.push(item.body.body[0])
+                    }else if(methodName==='constructor'){
+                        // 
                     }
                 });
                 const blockStatements = t.blockStatement(functions);
                 path.replaceWith(t.functionDeclaration(path.node.id, [t.identifier('props')], blockStatements))
             },
+            MemberExpression(path){
+                const parent=path.parent;
+                const node=path.node;
+                if(node.object.type==="ThisExpression"&&node.property.name==="state"){
+                    path.parentPath.replaceWith(parent.property);
+                }
+            }
         });
         this.ast = ast;
     }
