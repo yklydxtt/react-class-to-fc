@@ -39,10 +39,13 @@ class Transformer {
                         const node = path.node;
                         const methodName = node.key.name;
                         if (cycle.indexOf(methodName) === -1) {
+                            // 处理非生命周期函数
                             functions.push(t.functionDeclaration(node.key, node.params, node.body));
                         } else if (methodName === 'render') {
+                            // 处理render
                             functions.push(node.body.body[0])
                         } else if (methodName === 'constructor') {
+                            // 处理constructor
                             node.body.body.forEach(statement => {
                                 const expression = statement.expression || {};
                                 // 处理Super
@@ -57,12 +60,22 @@ class Transformer {
                                             state.key=item.key.name;
                                             state.value=item.value
                                             _self.state.push(state);
-                                        })
+                                        });
+                                        _self.collectHooks('useState');
                                     }
                                     return;
                                 }
                                 this.outerExpress.push(statement);
                             })
+                        }else if(methodName==='componentDidMount'){
+                            // 处理conponentDidMount
+                            _self.collectHooks('useEffect');
+                            const body=node.body;
+                            const expression=t.expressionStatement(t.callExpression(t.identifier('useEffect'),[t.arrowFunctionExpression([],body),t.arrayExpression([])]));
+                            functions.unshift(expression);
+                        }else if(methodName==='componentWillUnmount'){
+                            // 处理componentWillUnmount
+
                         }
                     }
                 })
@@ -85,6 +98,12 @@ class Transformer {
         // 处理outerExpression
         
         this.ast = ast;
+    }
+
+    collectHooks=(hookName)=>{
+        if(this.hooks.indexOf(hookName)===-1){
+            this.hooks.push(hookName);
+        }
     }
 
     output = () => {
