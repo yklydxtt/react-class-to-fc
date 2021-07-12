@@ -108,18 +108,34 @@ class Transformer {
                         blockBodyList.push(statement);
                     }
                     blockStatement.replaceWith(t.blockStatement(blockBodyList));
-                }else if(node.object.type==='ThisExpression'&&path.parent.type==='CallExpression'){
+                } else if (node.object.type === 'ThisExpression' && path.parent.type === 'CallExpression') {
                     path.replaceWith(node.property);
-                }else if(node.object.type==='ThisExpression'){
+                } else if (node.object.type === 'ThisExpression') {
                     _self.outerVariable.push(node.property.name);
                     path.parentPath.get('left').replaceWith(path.node.property);
-
                 }
             }
         });
         // 处理outerExpression
-
+        this.handleOuterExpress(ast);
         this.ast = ast;
+    }
+
+    handleOuterExpress = ast => {
+        // this.outerExpress
+        const _self=this;
+        traverse(ast,{
+            Program(path) {
+                const newNode=path.node;
+                _self.outerVariable.forEach(item=>{
+                    console.log(item);
+                    const variable=t.variableDeclaration('let',[t.variableDeclarator(t.identifier(item))]);
+                    newNode.body.unshift(variable);
+                });
+                path.replaceWith(newNode);
+                path.skip();
+            }
+        })
     }
 
     collectHooks = (hookName) => {
