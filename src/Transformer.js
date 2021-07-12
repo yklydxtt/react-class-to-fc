@@ -30,7 +30,7 @@ class Transformer {
     walkAst = () => {
         const _self = this;
         const content = fs.readFileSync(this.mainFile, 'utf-8');
-        const ast = parse(content, { sourceType: "module", plugins: ["jsx"] });
+        const ast = parse(content, { sourceType: "module", plugins: ["jsx","decorators-legacy"] });
         traverse(ast, {
             ClassDeclaration(path) {
                 const functions = [];
@@ -110,7 +110,7 @@ class Transformer {
                     blockStatement.replaceWith(t.blockStatement(blockBodyList));
                 } else if (node.object.type === 'ThisExpression' && path.parent.type === 'CallExpression') {
                     path.replaceWith(node.property);
-                } else if (node.object.type === 'ThisExpression') {
+                } else if (node.object.type === 'ThisExpression'&&node.property.name!=='props') {
                     _self.outerVariable.push(node.property.name);
                     path.parentPath.get('left').replaceWith(path.node.property);
                 }
