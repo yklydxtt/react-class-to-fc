@@ -9,7 +9,7 @@ const t = require('@babel/types');
 const inquirer = require('inquirer');
 
 const cycle = ['constructor', 'render', 'componentDidMount', 'getDerivedStateFromProps', 'shouldComponentUpdate', 'getSnapshotBeforeUpdate', 'componentDidUpdate', 'componentWillUnmount'];
-
+const unusedImports=['Component','PureComponent']
 class Transformer {
     constructor(main) {
         this.mainFile = path.join(process.cwd(), main.input || 'index.jsx');
@@ -117,25 +117,42 @@ class Transformer {
             }
         });
         // 处理outerExpression
-        this.handleOuterExpress(ast);
+        const fnoe=this.handleOuterExpress();
+        // 处理hooks的引入
+        const fnhi=this.handleHooksImports();
+        const fns={...fnoe,...fnhi};
+        traverse(ast,fns);
         this.ast = ast;
     }
 
-    handleOuterExpress = ast => {
+    handleOuterExpress = () => {
         // this.outerExpress
         const _self=this;
-        traverse(ast,{
+        return {
             Program(path) {
                 const newNode=path.node;
                 _self.outerVariable.forEach(item=>{
-                    console.log(item);
                     const variable=t.variableDeclaration('let',[t.variableDeclarator(t.identifier(item))]);
                     newNode.body.unshift(variable);
                 });
                 path.replaceWith(newNode);
-                path.skip();
             }
-        })
+        }
+    }
+
+    handleHooksImports=()=>{
+        const _self=this;
+        return {
+            ImportDeclaration(path){
+                const node=path.node;
+                if(node.source.value==='react'){
+                    node.specifiers=(node.specifiers.filter(item=>item.type==='ImportDefaultSpecifier'||unusedImports.indexOf(item.imported.name)===-1));
+                    _self.hooks.forEach(hookName=>{
+                        node.specifiers.push(t.importSpecifier(t.identifier(hookName),t.identifier(hookName)));
+                    })
+                }
+            }
+        }
     }
 
     collectHooks = (hookName) => {
