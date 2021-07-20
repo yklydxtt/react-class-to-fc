@@ -15,3 +15,9 @@ npm i react-class-to-fc -g
 ctfc -i react-demo.js -o fc.js
 ```
 就会将 react-demo.js文件中的class组件转化成function组件，并生成fc.js
+
+## todos
+- getDerivedStateFromProps处理
+- props解构赋值处理
+- class方法处理
+- "state={}"写法兼容

@@ -15,7 +15,6 @@ class Transformer {
         this.mainFile = path.join(process.cwd(), main.input || 'index.jsx');
         this.outFile = path.join(process.cwd(), main.output || 'index.jsx');
         this.imports = [];
-        this.fcBody = [];
         this.classMethod = [];
         this.cycle = [];
         this.hooks = [];
@@ -25,6 +24,8 @@ class Transformer {
         this.ast = {};
         this.code = "";
         this.outerExpress = [];
+        // 函数中的body
+        this.componentBody=[];
     }
 
     walkAst = () => {
@@ -33,68 +34,31 @@ class Transformer {
         const ast = parse(content, { sourceType: "module", plugins: ["jsx","decorators-legacy"] });
         traverse(ast, {
             ClassDeclaration(path) {
-                const functions = [];
                 path.traverse({
-                    ClassMethod(path) {
-                        const node = path.node;
-                        const methodName = node.key.name;
-                        if (cycle.indexOf(methodName) === -1) {
-                            // 处理非生命周期函数
-                            functions.push(t.functionDeclaration(node.key, node.params, node.body));
-                        } else if (methodName === 'constructor') {
-                            // 处理constructor
-                            node.body.body.forEach(statement => {
-                                const expression = statement.expression || {};
-                                // 处理Super
-                                if (expression.callee && expression.callee.type === 'Super') {
-                                    return;
-                                }
-                                // 处理this.state
-                                if (expression.type === 'AssignmentExpression') {
-                                    if (expression.left.property.name === 'state') {
-                                        expression.right.properties.forEach(item => {
-                                            const state = {};
-                                            state.key = item.key.name;
-                                            state.value = item.value
-                                            _self.state.push(state);
-                                        });
-                                        _self.collectHooks('useState');
-                                    }
-                                    return;
-                                }
-                                this.outerExpress.push(statement);
-                            })
-                        } else if (methodName === 'componentDidMount') {
-                            // 处理componentDidMount
-                            _self.collectHooks('useEffect');
-                            const body = node.body;
-                            const expression = t.expressionStatement(t.callExpression(t.identifier('useEffect'), [t.arrowFunctionExpression([], body), t.arrayExpression([])]));
-                            functions.unshift(expression);
-                        } else if (methodName === 'componentWillUnmount') {
-                            // 处理componentWillUnmount
-                            _self.collectHooks('useEffect');
-                            const body = node.body;
-                            const expression = t.expressionStatement(t.callExpression(t.identifier('useEffect'), [t.arrowFunctionExpression([], t.blockStatement([t.returnStatement(t.arrowFunctionExpression([], body))])), t.arrayExpression([])]))
-                            functions.push(expression);
-                        } else if (methodName === 'render') {
-                            // 处理render
-                            functions.push(node.body.body[0])
-                        }
+                    ClassMethod(path){
+                        _self.handleClassFn(path);
+                    },
+                    ClassProperty(path){
+                        _self.handleClassFn(path);
                     }
                 })
                 _self.state.forEach(item => {
                     const decl = t.arrayPattern([t.identifier(item.key), t.identifier(`set${item.key[0].toUpperCase()}${item.key.slice(1)}`)]);
                     const call = t.callExpression(t.identifier("useState"), [item.value])
-                    functions.unshift(t.variableDeclaration("const", [t.variableDeclarator(decl, call)]))
+                    _self.componentBody.unshift(t.variableDeclaration("const", [t.variableDeclarator(decl, call)]))
                 })
-                const blockStatements = t.blockStatement(functions);
+                const blockStatements = t.blockStatement(_self.componentBody);
                 path.replaceWith(t.functionDeclaration(path.node.id, [t.identifier('props')], blockStatements));
             },
             MemberExpression(path) {
                 const parent = path.parent;
                 const node = path.node;
                 if (node.object.type === "ThisExpression" && node.property.name === "state") {
-                    path.parentPath.replaceWith(parent.property);
+                    if(parent.property){
+                        path.parentPath.replaceWith(parent.property);
+                    }else{
+                        path.parentPath.parentPath.remove();
+                    }
                 } else if (node.object.type === 'ThisExpression' && node.property.name === 'setState') {
                     // 暂时先处理对象形式，后续处理函数形式
                     const states = {};
@@ -107,7 +71,7 @@ class Transformer {
                         const statement = t.expressionStatement(t.callExpression(t.identifier(`set${state[0].toUpperCase()}${state.slice(1)}`), [states[state]]));
                         blockBodyList.push(statement);
                     }
-                    blockStatement.replaceWith(t.blockStatement(blockBodyList));
+                    blockStatement.replaceWith&&blockStatement.replaceWith(t.blockStatement(blockBodyList));
                 } else if (node.object.type === 'ThisExpression' && path.parent.type === 'CallExpression') {
                     path.replaceWith(node.property);
                 } else if (node.object.type === 'ThisExpression'&&node.property.name!=='props') {
@@ -123,6 +87,61 @@ class Transformer {
         const fns={...fnoe,...fnhi};
         traverse(ast,fns);
         this.ast = ast;
+    }
+
+    handleClassFn=(path)=>{
+        const node = path.node;
+        const methodName = node.key.name;
+        if(node.value&&node.value.type==='ObjectExpression'){
+            // 处理对象模式
+            return;
+        }
+        if (cycle.indexOf(methodName) === -1) {
+            // 处理非生命周期函数
+            const params=node.params?node.params:node.value.params;
+            if(node.value&&node.value.type==='ArrowFunctionExpression'){
+                this.componentBody.push(t.VariableDeclaration('const',[t.VariableDeclarator(node.key,node.value)]));
+                return;
+            }
+            this.componentBody.push(t.functionDeclaration(node.key, params, node.body));
+        } else if (methodName === 'constructor') {
+            // 处理constructor
+            node.body.body.forEach(statement => {
+                const expression = statement.expression || {};
+                // 处理Super
+                if (expression.callee && expression.callee.type === 'Super') {
+                    return;
+                }
+                // 处理this.state
+                if (expression.type === 'AssignmentExpression') {
+                    if (expression.left.property.name === 'state') {
+                        expression.right.properties.forEach(item => {
+                            const state = {};
+                            state.key = item.key.name;
+                            state.value = item.value
+                            _self.state.push(state);
+                        });
+                        _self.collectHooks('useState');
+                    }
+                    return;
+                }
+                this.outerExpress.push(statement);
+            })
+        } else if (methodName === 'componentDidMount') {
+            // 处理componentDidMount
+            this.collectHooks('useEffect');
+            const expression = t.expressionStatement(t.callExpression(t.identifier('useEffect'), [this.createArrowFn(node), t.arrayExpression([])]));
+            this.componentBody.unshift(expression);
+        } else if (methodName === 'componentWillUnmount') {
+            // 处理componentWillUnmount
+            this.collectHooks('useEffect');
+            const body = node.body;
+            const expression = t.expressionStatement(t.callExpression(t.identifier('useEffect'), [t.arrowFunctionExpression([], t.blockStatement([t.returnStatement(this.createArrowFn(node))])), t.arrayExpression([])]))
+            this.componentBody.push(expression);
+        } else if (methodName === 'render') {
+            // 处理render
+            this.componentBody.push(...node.body.body);
+        }
     }
 
     handleOuterExpress = () => {
@@ -153,6 +172,17 @@ class Transformer {
                 }
             }
         }
+    }
+
+    createArrowFn=(node)=>{
+        const body = node.body;
+        let arrowFn;
+        if(node.value&&node.value.type==='ArrowFunctionExpression'){
+            arrowFn=node.value;
+        }else{
+            arrowFn=t.arrowFunctionExpression([], body)
+        }
+        return arrowFn;
     }
 
     collectHooks = (hookName) => {
