@@ -21,3 +21,4 @@ ctfc -i react-demo.js -o fc.js
 - props解构赋值处理
 - class方法处理
 - "state={}"写法兼容
+- 解决this问题

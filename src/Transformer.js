@@ -3,7 +3,6 @@ const { log } = require('./utils');
 const fs = require('fs');
 const { parse } = require("@babel/parser");
 const generate = require("@babel/generator").default;
-const template = require('@babel/template').default;
 const traverse = require('@babel/traverse').default;
 const t = require('@babel/types');
 const inquirer = require('inquirer');
@@ -13,7 +12,8 @@ const unusedImports=['Component','PureComponent']
 class Transformer {
     constructor(main) {
         this.mainFile = path.join(process.cwd(), main.input || 'index.jsx');
-        this.outFile = path.join(process.cwd(), main.output || 'index.jsx');
+        const [name,ext]=main.input.split('.');
+        this.outFile = path.join(process.cwd(), main.output || `${name}.fc.${ext}`);
         this.imports = [];
         this.classMethod = [];
         this.cycle = [];
@@ -65,18 +65,22 @@ class Transformer {
                     parent.arguments[0].properties.forEach(item => {
                         states[item.key.name] = item.value;
                     });
-                    const blockStatement = path.scope.path.get('body');
+                    const blockStatement = path.parentPath.parentPath;
                     const blockBodyList = [];
                     for (let state in states) {
                         const statement = t.expressionStatement(t.callExpression(t.identifier(`set${state[0].toUpperCase()}${state.slice(1)}`), [states[state]]));
+                        // blockStatement.body=[...blockStatement.body,statement];
                         blockBodyList.push(statement);
                     }
-                    blockStatement.replaceWith&&blockStatement.replaceWith(t.blockStatement(blockBodyList));
+                    blockStatement.replaceWith&&blockStatement.replaceWith(...blockBodyList);
                 } else if (node.object.type === 'ThisExpression' && path.parent.type === 'CallExpression') {
                     path.replaceWith(node.property);
                 } else if (node.object.type === 'ThisExpression'&&node.property.name!=='props') {
                     _self.outerVariable.push(node.property.name);
                     path.parentPath.get('left').replaceWith(path.node.property);
+                }else if(node.object.type === 'ThisExpression'&&node.property.name==='props'){
+                    // props解构赋值
+                    path.replaceWith(node.property);
                 }
             }
         });
@@ -135,7 +139,6 @@ class Transformer {
         } else if (methodName === 'componentWillUnmount') {
             // 处理componentWillUnmount
             this.collectHooks('useEffect');
-            const body = node.body;
             const expression = t.expressionStatement(t.callExpression(t.identifier('useEffect'), [t.arrowFunctionExpression([], t.blockStatement([t.returnStatement(this.createArrowFn(node))])), t.arrayExpression([])]))
             this.componentBody.push(expression);
         } else if (methodName === 'render') {

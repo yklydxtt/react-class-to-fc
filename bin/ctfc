@@ -8,7 +8,7 @@ program.version(version);
 program.command('transform')
     .description('tranform the file')
     .option('-i --input <input>','set the input file')
-    .option('-o --output <output>','set the output file')
+    .option('-o --output [output]','set the output file')
     .action(transform);
 
 var args = process.argv;
