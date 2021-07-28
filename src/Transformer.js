@@ -46,11 +46,9 @@ class Transformer {
                 _self.state.forEach(item => {
                     const decl = t.arrayPattern([t.identifier(item.key), t.identifier(`set${item.key[0].toUpperCase()}${item.key.slice(1)}`)]);
                     const call = t.callExpression(t.identifier("useState"), [item.value])
-                    console.log(`set${item.key[0].toUpperCase()}${item.key.slice(1)}`);
                     _self.componentBody.unshift(t.variableDeclaration("const", [t.variableDeclarator(decl, call)]))
                 });
                 const blockStatements = t.blockStatement(_self.componentBody);
-                // console.log(blockStatements);
                 path.replaceWith(t.functionDeclaration(path.node.id, [t.identifier('props')], blockStatements));
             },
             MemberExpression(path) {
@@ -104,7 +102,6 @@ class Transformer {
                     const state = {};
                     state.key = item.key.name;
                     state.value = item.value
-                    console.log(item.value,'value');
                     this.state.push(state);
                 });
                 this.collectHooks('useState');
