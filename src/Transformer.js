@@ -42,12 +42,15 @@ class Transformer {
                         _self.handleClassFn(path);
                     }
                 })
+                // 生成useState
                 _self.state.forEach(item => {
                     const decl = t.arrayPattern([t.identifier(item.key), t.identifier(`set${item.key[0].toUpperCase()}${item.key.slice(1)}`)]);
                     const call = t.callExpression(t.identifier("useState"), [item.value])
+                    console.log(`set${item.key[0].toUpperCase()}${item.key.slice(1)}`);
                     _self.componentBody.unshift(t.variableDeclaration("const", [t.variableDeclarator(decl, call)]))
-                })
+                });
                 const blockStatements = t.blockStatement(_self.componentBody);
+                // console.log(blockStatements);
                 path.replaceWith(t.functionDeclaration(path.node.id, [t.identifier('props')], blockStatements));
             },
             MemberExpression(path) {
@@ -69,7 +72,6 @@ class Transformer {
                     const blockBodyList = [];
                     for (let state in states) {
                         const statement = t.expressionStatement(t.callExpression(t.identifier(`set${state[0].toUpperCase()}${state.slice(1)}`), [states[state]]));
-                        // blockStatement.body=[...blockStatement.body,statement];
                         blockBodyList.push(statement);
                     }
                     blockStatement.replaceWith&&blockStatement.replaceWith(...blockBodyList);
@@ -97,7 +99,16 @@ class Transformer {
         const node = path.node;
         const methodName = node.key.name;
         if(node.value&&node.value.type==='ObjectExpression'){
-            // 处理对象模式
+            if(node.key.name==='state'){
+                node.value.properties.forEach(item => {
+                    const state = {};
+                    state.key = item.key.name;
+                    state.value = item.value
+                    console.log(item.value,'value');
+                    this.state.push(state);
+                });
+                this.collectHooks('useState');
+            }
             return;
         }
         if (cycle.indexOf(methodName) === -1) {
@@ -122,10 +133,10 @@ class Transformer {
                         expression.right.properties.forEach(item => {
                             const state = {};
                             state.key = item.key.name;
-                            state.value = item.value
-                            _self.state.push(state);
+                            state.value = item.value;
+                            this.state.push(state);
                         });
-                        _self.collectHooks('useState');
+                        this.collectHooks('useState');
                     }
                     return;
                 }

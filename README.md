@@ -20,3 +20,4 @@ ctfc -i react-demo.js -o fc.js
 - getDerivedStateFromProps处理
 - "state={}"写法兼容
 - 解决this问题
+- UNSAFE_componentWillMount问题
