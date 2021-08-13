@@ -1,6 +1,6 @@
 # react-class-to-fc
-
-## ✨ 特性
+[![npm downloads](https://img.shields.io/npm/dm/react-class-to-fc?style=flat-square)](https://www.npmtrends.com/react-class-to-fc)
+## ⭐  特性
 
 - 将react class组件转化为react 函数组件   
 ![image](https://user-images.githubusercontent.com/52593709/125226382-92121e00-e303-11eb-909a-6880eee8b548.png)
@@ -25,9 +25,7 @@ npm i
 ```js
 npm link
 ```
-
-## todos
-- getDerivedStateFromProps处理
-- "state={}"写法兼容
-- 解决this问题
-- UNSAFE_componentWillMount问题
+## ⚙️ 更新日志
+[CHANGELOG.md](./changelog.md)
+## ✈️ 计划列表
+[TODO.md](./TODO.md)

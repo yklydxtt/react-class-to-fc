@@ -5,6 +5,8 @@
 - [x] componentDidMount转化
 - [x] componentWillUnmount转化
 - [ ] decorator支持
+- [ ] 添加eslint
+- [ ] 添加prettier
 - [ ] 添加ci
 - [ ] 添加测试用例
 - [ ] getDerivedStateFromProps处理
