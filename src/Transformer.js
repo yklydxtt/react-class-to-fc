@@ -46,7 +46,8 @@ class Transformer {
                 _self.state.forEach(item => {
                     const decl = t.arrayPattern([t.identifier(item.key), t.identifier(`set${item.key[0].toUpperCase()}${item.key.slice(1)}`)]);
                     const call = t.callExpression(t.identifier("useState"), [item.value])
-                    _self.componentBody.unshift(t.variableDeclaration("const", [t.variableDeclarator(decl, call)]))
+                    // 防止命名重复的问题，暂时用var
+                    _self.componentBody.unshift(t.variableDeclaration("var", [t.variableDeclarator(decl, call)]))
                 });
                 const blockStatements = t.blockStatement(_self.componentBody);
                 path.replaceWith(t.functionDeclaration(path.node.id, [t.identifier('props')], blockStatements));
@@ -88,7 +89,9 @@ class Transformer {
         const fnoe=this.handleOuterExpress();
         // 处理hooks的引入
         const fnhi=this.handleHooksImports();
-        const fns={...fnoe,...fnhi};
+        // 处理state为var的问题
+        const fnVar=this.handleReplaceVar();
+        const fns={...fnoe,...fnhi,...fnVar};
         traverse(ast,fns);
         this.ast = ast;
     }
@@ -96,6 +99,7 @@ class Transformer {
     handleClassFn=(path)=>{
         const node = path.node;
         const methodName = node.key.name;
+        // 处理state={}
         if(node.value&&node.value.type==='ObjectExpression'){
             if(node.key.name==='state'){
                 node.value.properties.forEach(item => {
@@ -185,6 +189,16 @@ class Transformer {
         }
     }
 
+    handleReplaceVar=()=>{
+        return {
+            VariableDeclaration(path){
+                if(path.node.declarations&&path.node.declarations[0].init&&path.node.declarations[0].init.callee&&path.node.declarations[0].init.callee.name==='useState'){
+                    path.node.kind="const";
+                }
+            }
+        }
+    }
+
     createArrowFn=(node)=>{
         const body = node.body;
         let arrowFn;
@@ -203,7 +217,8 @@ class Transformer {
     }
 
     output = () => {
-        fs.writeFileSync(this.outFile, this.code)
+        fs.writeFileSync(this.outFile, this.code);
+        log(`${this.outFile}文件生成成功！`,'success')
     }
 
     genFc = () => {

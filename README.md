@@ -16,6 +16,16 @@ ctfc -i react-demo.js -o fc.js
 ```
 就会将 react-demo.js文件中的class组件转化成function组件，并生成fc.js
 
+## 😘 贡献者指南
+安装
+```js
+npm i
+```
+建立连接
+```js
+npm link
+```
+
 ## todos
 - getDerivedStateFromProps处理
 - "state={}"写法兼容
