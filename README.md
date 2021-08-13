@@ -1,5 +1,6 @@
 # react-class-to-fc
 [![npm downloads](https://img.shields.io/npm/dm/react-class-to-fc?style=flat-square)](https://www.npmtrends.com/react-class-to-fc)
+![npm-version](https://img.shields.io/npm/v/react-class-to-fc.svg)
 ## ⭐  特性
 
 - 将react class组件转化为react 函数组件   
