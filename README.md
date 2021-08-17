@@ -28,6 +28,6 @@ npm i
 npm link
 ```
 ## ⚙️ 更新日志
-[CHANGELOG.md](./changelog.md)
+[CHANGELOG.md](./CHANGELOG.md)
 ## ✈️ 计划列表
 [TODO.md](./TODO.md)

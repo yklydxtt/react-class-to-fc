@@ -12,3 +12,5 @@
 - [ ] getDerivedStateFromProps处理
 - [ ] UNSAFE_componentWillMount转化
 - [ ] 解决this问题
+- [ ] 支持ref
+- [ ] 没有初始化的state处理
