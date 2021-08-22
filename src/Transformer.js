@@ -46,6 +46,22 @@ class Transformer {
     })
     traverse(ast, {
       ClassDeclaration(path) {
+        // 收集state
+        path.traverse({
+          ClassProperty(path) {
+            if (path.node.key.name === 'state') {
+              path.node.value.properties.forEach((item) => {
+                const state = {}
+                state.key = item.key.name
+                state.value = item.value
+                _self.state.push(state)
+              })
+              console.log(_self.state)
+              _self.collectHooks('useState')
+              path.skip()
+            }
+          }
+        })
         path.traverse({
           ClassMethod(path) {
             _self.handleClassFn(path)
@@ -143,21 +159,11 @@ class Transformer {
   handleClassFn = (path) => {
     const node = path.node
     const methodName = node.key.name
-    // 处理state={}
-    if (node.value && node.value.type === 'ObjectExpression') {
-      if (node.key.name === 'state') {
-        node.value.properties.forEach((item) => {
-          const state = {}
-          state.key = item.key.name
-          state.value = item.value
-          this.state.push(state)
-        })
-        this.collectHooks('useState')
-      }
-      return
-    }
     if (cycle.indexOf(methodName) === -1) {
       // 处理非生命周期函数
+      if (!node.params) {
+        return
+      }
       const params = node.params ? node.params : node.value.params
       if (node.value && node.value.type === 'ArrowFunctionExpression') {
         this.componentBody.push(
@@ -219,6 +225,22 @@ class Transformer {
     } else if (methodName === 'render') {
       // 处理render
       this.componentBody.push(...node.body.body)
+    } else if (methodName === 'getDerivedStateFromProps') {
+      // 处理getDerivedStateFromProps
+      this.collectHooks('useEffect')
+      const propsName = node.params[0].name
+      const stateName = node.params[1].name
+      const statesIdentifer = []
+      this.state.forEach((item) => {
+        statesIdentifer.push(t.identifier(item.key))
+      })
+      const expression = t.expressionStatement(
+        t.callExpression(t.identifier('useEffect'), [
+          this.createArrowFn(node),
+          t.arrayExpression([t.identifier('props'), ...statesIdentifer])
+        ])
+      )
+      this.componentBody.push(expression)
     }
   }
 
