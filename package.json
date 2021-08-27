@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "",
-    "lint": "prettier --write \"src/**/*.js\"",
+    "format": "prettier --write .",
     "prepublish": "babel src -d lib"
   },
   "repository": {
@@ -38,6 +38,9 @@
     "pre-commit": "lint-staged"
   },
   "lint-staged": {
+    "*": [
+      "prettier --write --ignore-unknown"
+    ],
     "*.{js,md}": [
       "prettier --write",
       "git add"
