@@ -40,9 +40,6 @@
     "pre-commit": "lint-staged"
   },
   "lint-staged": {
-    "*": [
-      "prettier --write --ignore-unknown"
-    ],
     "*.{js,md}": [
       "prettier --write",
       "git add"
