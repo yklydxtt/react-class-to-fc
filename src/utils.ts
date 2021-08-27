@@ -1,6 +1,6 @@
-const chalk = require('chalk')
+import chalk from 'chalk'
 
-exports.log = function log(msg, type = 'error') {
+export function log(msg: string, type: string = 'error') {
   if (type === 'error') {
     return console.log(chalk.red(`[vue-to-react]: ${msg}`))
   }

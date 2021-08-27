@@ -20,9 +20,11 @@ program.parse(args);
 process.on('exit', () => console.log());
 
 function transform(main,command){
-    const Transformer=require('../');
-    const transformer=new Transformer(main,command);
-    if(command._name==='transform'){
-        transformer.start();
-    }
+    const {transform}=require('../');
+    console.log(transform);
+    // transform();
+    // const transformer=new Transformer(main,command);
+    // if(command._name==='transform'){
+    //     transformer.start();
+    // }
 }
