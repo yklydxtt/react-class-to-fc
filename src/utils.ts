@@ -6,3 +6,12 @@ export function log(msg: string, type: string = 'error') {
   }
   console.log(chalk.green(msg))
 }
+
+/**
+ * Check if value is function
+ * @param {*} obj Any javascript object
+ * @returns {Boolean} True if the passed-in value is a function
+ */
+export function isFn(obj: any) {
+  return typeof obj === 'function'
+}

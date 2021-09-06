@@ -21,8 +21,7 @@ process.on('exit', () => console.log());
 
 function transform(main,command){
     const {transform}=require('../');
-    console.log(transform);
-    // transform();
+    transform(main);
     // const transformer=new Transformer(main,command);
     // if(command._name==='transform'){
     //     transformer.start();

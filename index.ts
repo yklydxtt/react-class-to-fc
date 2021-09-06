@@ -1,1 +1,1 @@
-export { transform, transformSync, transformAsync } from './src'
+export { transform } from './src'
