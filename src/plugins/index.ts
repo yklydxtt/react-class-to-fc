@@ -1,3 +1,4 @@
 import classDeclarePlugin from './classDeclarePlugin'
+import getClassMethodPlugin from './getClassMethodPlugin'
 
-export default [classDeclarePlugin]
+export { classDeclarePlugin, getClassMethodPlugin }

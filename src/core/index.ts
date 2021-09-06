@@ -1,5 +1,5 @@
 export function initLifecycle(vm) {
-  const hooks = ['init', 'beforeTraverse']
+  const hooks = ['init', 'beforeTransform', 'transform', 'afterTransform']
   vm._hooks = {}
   vm._lifecycle = {}
   hooks.forEach((hook) => {
@@ -22,7 +22,7 @@ export function callHook(
       next(data)
     } else if (typeof hookFn === 'function') {
       if (hookFn.length === 2) {
-        hookFn(data, (result) => {
+        hookFn(data, (result: any) => {
           data = result
           step(index + 1)
         })
